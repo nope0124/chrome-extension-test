@@ -8,7 +8,7 @@ import { BookmarkLink } from '@/interfaces/bookmark';
 import { SignInData } from '@/interfaces/index';
 import { User } from '@/interfaces/user';
 import { getCurrentUser, signIn } from '@/lib/api/auth';
-import { getBookmark } from '@/lib/api/bookmark';
+import { getBookmarkLinks, postBookmarkLink } from '@/lib/api/bookmark_link';
 
 import { Typography } from '@mui/material';
 import Box from '@mui/material/Box';
@@ -18,6 +18,7 @@ import CardContent from '@mui/material/CardContent';
 import CardHeader from '@mui/material/CardHeader';
 import TextField from '@mui/material/TextField';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { PostBookmarkLinkRequest } from './interfaces/bookmark_link';
 
 // MUIのカスタムテーマを作成
 const theme = createTheme({
@@ -220,35 +221,34 @@ const Home: React.FC = () => {
 
   const [bookmarkLinks, setBookmarkLinks] = useState<BookmarkLink[]>([]);
 
+  const getAuthData = (): Promise<AuthData> => {
+    return new Promise((resolve, reject) => {
+      chrome.storage.local.get(
+        ['access-token', 'client', 'uid'],
+        function (result) {
+          if (result['access-token'] && result['client'] && result['uid']) {
+            const authData: AuthData = {
+              accessToken: result['access-token'],
+              client: result['client'],
+              uid: result['uid'],
+            };
+            resolve(authData);
+          } else {
+            reject('No auth data found');
+          }
+        }
+      );
+    });
+  };
+
   const handleGetBookmark = async () => {
     try {
-      // Chromeストレージから認証データを取得するプロミスベースの関数
-      const getAuthData = (): Promise<AuthData> => {
-        return new Promise((resolve, reject) => {
-          chrome.storage.local.get(
-            ['access-token', 'client', 'uid'],
-            function (result) {
-              if (result['access-token'] && result['client'] && result['uid']) {
-                const authData: AuthData = {
-                  accessToken: result['access-token'],
-                  client: result['client'],
-                  uid: result['uid'],
-                };
-                resolve(authData);
-              } else {
-                reject('No auth data found');
-              }
-            }
-          );
-        });
-      };
-
       // 認証データを取得
       const authData: AuthData = await getAuthData();
       console.log(authData);
 
       // ブックマークを取得
-      const res = await getBookmark(authData);
+      const res = await getBookmarkLinks(authData);
       console.log(res);
 
       if (res?.status === 200) {
@@ -263,6 +263,29 @@ const Home: React.FC = () => {
     }
   };
 
+  const handlePostBookmarkLink = async () => {
+    try {
+      // 認証データを取得
+      const authData: AuthData = await getAuthData();
+      console.log(authData);
+
+      const data: PostBookmarkLinkRequest = {
+        url: currentUrl,
+        urlTitle: currentTitle,
+        faviconUrl: faviconUrl,
+      };
+
+      const res = await postBookmarkLink(authData, data);
+      console.log(res);
+
+      if (res?.status === 200) {
+        handleGetBookmark();
+      } else {
+        console.log('No bookmark data');
+      }
+    } catch (err) {}
+  };
+
   return (
     <>
       {isSignedIn && currentUser ? (
@@ -273,12 +296,13 @@ const Home: React.FC = () => {
             <p>現在のURL: {currentUrl}</p>
             <p>現在のタイトル: {currentTitle}</p>
             <p>
-              現在のFavicon: <img src={faviconUrl} alt="Favicon" />
+              現在のFavicon: <img src={faviconUrl} />
             </p>
+            <button onClick={handlePostBookmarkLink}>保存</button>
             {bookmarkLinks.map((link, index) => (
               <div key={index}>
                 <a href={link.url} target="_blank" rel="noopener noreferrer">
-                  <img src={link.faviconUrl} alt={`${link.urlTitle} Favicon`} />
+                  <img src={link.faviconUrl} />
                   {link.urlTitle}
                 </a>
               </div>
