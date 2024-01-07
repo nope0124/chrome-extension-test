@@ -76,10 +76,10 @@ const Popup = () => {
   // アプリケーション起動時にトークンをチェック
   const checkToken = () => {
     chrome.storage.local.get(
-      ['access-token', 'client', 'uid'],
+      ['accessToken', 'client', 'uid'],
       function (result) {
-        if (result['access-token'] && result['client'] && result['uid']) {
-          autoLogin(result['access-token'], result['client'], result['uid']);
+        if (result['accessToken'] && result['client'] && result['uid']) {
+          autoLogin(result['accessToken'], result['client'], result['uid']);
         }
       }
     );
@@ -224,11 +224,11 @@ const Home: React.FC = () => {
   const getAuthData = (): Promise<AuthData> => {
     return new Promise((resolve, reject) => {
       chrome.storage.local.get(
-        ['access-token', 'client', 'uid'],
+        ['accessToken', 'client', 'uid'],
         function (result) {
-          if (result['access-token'] && result['client'] && result['uid']) {
+          if (result['accessToken'] && result['client'] && result['uid']) {
             const authData: AuthData = {
-              accessToken: result['access-token'],
+              accessToken: result['accessToken'],
               client: result['client'],
               uid: result['uid'],
             };
