@@ -25,18 +25,16 @@ export const signOut = () => {
 };
 
 // 認証済みのユーザーを取得
-export const getCurrentUser = () => {
-  if (
-    !Cookies.get('_access_token') ||
-    !Cookies.get('_client') ||
-    !Cookies.get('_uid')
-  )
-    return;
+export const getCurrentUser = (
+  _access_token: string,
+  _client: string,
+  _uid: string
+) => {
   return client.get('/auth/sessions', {
     headers: {
-      'access-token': Cookies.get('_access_token'),
-      client: Cookies.get('_client'),
-      uid: Cookies.get('_uid'),
+      'access-token': _access_token,
+      client: _client,
+      uid: _uid,
     },
   });
 };

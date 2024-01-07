@@ -1,12 +1,11 @@
-import Cookies from 'js-cookie';
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 
 import { makeStyles } from '@mui/styles';
 
 import { SignInData } from '@/interfaces/index';
 import { User } from '@/interfaces/user';
-import { signIn } from '@/lib/api/auth';
+import { getCurrentUser, signIn } from '@/lib/api/auth';
 
 import { Typography } from '@mui/material';
 import Box from '@mui/material/Box';
@@ -42,7 +41,7 @@ const useStyles = makeStyles(() => ({
   },
 }));
 
-const AuthContext = createContext(
+export const AuthContext = createContext(
   {} as {
     loading: boolean;
     setLoading: React.Dispatch<React.SetStateAction<boolean>>;
@@ -63,6 +62,42 @@ const Popup = () => {
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
 
+  // ログイン成功時にトークンを保存
+  const saveAuthData = (authData: any) => {
+    chrome.storage.local.set(authData, function () {
+      console.log('Auth data is saved in Chrome storage');
+    });
+  };
+
+  // アプリケーション起動時にトークンをチェック
+  const checkToken = () => {
+    chrome.storage.local.get(
+      ['access-token', 'client', 'uid'],
+      function (result) {
+        if (result['access-token'] && result['client'] && result['uid']) {
+          autoLogin(result['access-token'], result['client'], result['uid']);
+        }
+      }
+    );
+  };
+
+  // 自動ログイン処理
+  const autoLogin = async (
+    accessToken: string,
+    client: string,
+    uid: string
+  ) => {
+    const res = await getCurrentUser(accessToken, client, uid);
+    console.log(res);
+    console.log('autoLoginCheck');
+    setCurrentUser(res?.data.currentUser);
+    setIsSignedIn(true);
+  };
+
+  useEffect(() => {
+    checkToken();
+  }, []);
+
   const handleSubmit = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
 
@@ -76,14 +111,15 @@ const Popup = () => {
       console.log(res);
 
       if (res.status === 200) {
-        // 成功した場合はCookieに各値を格納
-        Cookies.set('_access_token', res.headers['access-token']);
-        Cookies.set('_client', res.headers['client']);
-        Cookies.set('_uid', res.headers['uid']);
-        console.log(Cookies.set('_uid', res.headers['uid']));
+        saveAuthData({
+          'access-token': res.headers['access-token'],
+          client: res.headers['client'],
+          uid: res.headers['uid'],
+        });
 
         setIsSignedIn(true);
         setCurrentUser(res.data.data);
+        console.log(res.data.data);
         console.log('Signed in successfully!');
       }
     } catch (err) {
@@ -97,10 +133,7 @@ const Popup = () => {
     <>
       <Box sx={{ width: 540 }}>
         {isSignedIn && currentUser ? (
-          <>
-            <h2>メールアドレス: {currentUser?.email}</h2>
-            <h2>名前: {currentUser?.name}</h2>
-          </>
+          <Home />
         ) : (
           <form noValidate autoComplete="off">
             <Card className={classes.card}>
@@ -155,12 +188,37 @@ const Popup = () => {
 const Home: React.FC = () => {
   const { isSignedIn, currentUser } = useContext(AuthContext);
 
+  const [currentUrl, setCurrentUrl] = useState('');
+  const [currentTitle, setCurrentTitle] = useState('');
+  const [faviconUrl, setFaviconUrl] = useState('');
+
+  useEffect(() => {
+    // 現在のタブの情報を取得する関数
+    const getCurrentTabInfo = async () => {
+      // 権限の問題で`chrome.tabs.query`を使用する
+      const queryOptions = { active: true, currentWindow: true };
+      const [tab] = await chrome.tabs.query(queryOptions);
+      if (tab) {
+        setCurrentUrl(tab.url || '');
+        setCurrentTitle(tab.title || '');
+        setFaviconUrl(tab.favIconUrl || '');
+      }
+    };
+
+    getCurrentTabInfo();
+  }, []);
+
   return (
     <>
       {isSignedIn && currentUser ? (
         <>
           <h2>メールアドレス: {currentUser?.email}</h2>
           <h2>名前: {currentUser?.name}</h2>
+          <p>現在のURL: {currentUrl}</p>
+          <p>現在のタイトル: {currentTitle}</p>
+          <p>
+            現在のFavicon: <img src={faviconUrl} alt="Favicon" />
+          </p>
         </>
       ) : (
         <></>
