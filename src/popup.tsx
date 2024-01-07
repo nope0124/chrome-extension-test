@@ -1,77 +1,3 @@
-// import { getGitHubStats, getGitHubTopLanguage, getGitHubUsername } from '@/api';
-// import { Header, StatsBody, StatsForm } from '@/components';
-// import { ThemeType } from '@/types/enums';
-// import { Box, ChakraProvider, useColorMode } from '@chakra-ui/react';
-// import React, { useEffect, useState } from 'react';
-// import { createRoot } from 'react-dom/client';
-// import { useForm } from 'react-hook-form';
-
-// const Popup = () => {
-//   const [username, setUsername] = useState('');
-//   const [currentStats, setCurrentStats] = useState('');
-//   const [currentTopLanguage, setCurrentTopLanguage] = useState('');
-//   const { colorMode } = useColorMode();
-//   const { register, setValue, handleSubmit, formState } = useForm<FormData>();
-
-//   const onSubmit = handleSubmit((data) => {
-//     console.log(data['username']);
-//     setUsername(data['username']);
-//   });
-
-//   useEffect(() => {
-//     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-//       const currentURL = tabs[0].url || '';
-//       const name = getGitHubUsername(currentURL);
-//       setUsername(name);
-//       setValue('username', name);
-//     });
-//   }, []);
-
-//   useEffect(() => {
-//     const fetch = async (username: string) => {
-//       const themeType =
-//         colorMode === 'light' ? ThemeType.LIGHT : ThemeType.DARK;
-//       const stats = await getGitHubStats(username, themeType);
-//       const lang = await getGitHubTopLanguage(username, themeType);
-//       setCurrentTopLanguage(lang.data);
-//       setCurrentStats(stats.data);
-//     };
-//     console.log(username);
-//     if (username !== '') {
-//       console.log(username);
-//       fetch(username);
-//     }
-//   }, [username, colorMode, currentStats, currentTopLanguage]);
-
-//   return (
-//     <>
-//       <Box w="540px">
-//         <Header />
-//         <StatsBody
-//           currentStats={currentStats}
-//           currentTopLanguage={currentTopLanguage}
-//         />
-//         <StatsForm
-//           onSubmit={onSubmit}
-//           register={register}
-//           formState={formState}
-//         />
-//       </Box>
-//     </>
-//   );
-// };
-
-// const container = document.getElementById('root');
-// if (!container) throw new Error('container not found');
-// const root = createRoot(container);
-// root.render(
-//   <React.StrictMode>
-//     <ChakraProvider>
-//       <Popup />
-//     </ChakraProvider>
-//   </React.StrictMode>
-// );
-
 import Cookies from 'js-cookie';
 import React, { createContext, useContext, useState } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -130,14 +56,12 @@ const AuthContext = createContext(
 // サインイン用ページ
 const Popup = () => {
   const classes = useStyles();
-  // const history = useNavigate();
 
   const { setIsSignedIn, currentUser, setCurrentUser } =
     useContext(AuthContext);
 
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
-  const [alertMessageOpen, setAlertMessageOpen] = useState<boolean>(false);
 
   const handleSubmit1 = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
@@ -159,25 +83,22 @@ const Popup = () => {
         console.log(Cookies.set('_uid', res.headers['uid']));
 
         setIsSignedIn(true);
-        console.log(res.data.data);
+        // console.log(res.data.data);
         setCurrentUser(res.data.data);
-        console.log(currentUser);
-
-        // history('/home');
+        // console.log(currentUser);
 
         console.log('Signed in successfully!');
-      } else {
-        setAlertMessageOpen(true);
       }
     } catch (err) {
       console.log(err);
-      setAlertMessageOpen(true);
     }
   };
 
+  console.log(currentUser);
+
   return (
     <>
-      <Box sx={{ width: 540 }}>
+      <Box sx={{ width: 960 }}>
         <form noValidate autoComplete="off">
           <Card className={classes.card}>
             <CardHeader className={classes.header} title="サインイン" />
@@ -225,68 +146,35 @@ const Popup = () => {
       </Box>
     </>
   );
+};
 
-  // const [username, setUsername] = useState('');
-  // const [currentStats, setCurrentStats] = useState('');
-  // const [currentTopLanguage, setCurrentTopLanguage] = useState('');
-  // const { colorMode } = useColorMode();
-  // const { register, setValue, handleSubmit, formState } = useForm<FormData>();
+const App = () => {
+  // 状態変数を定義
+  const [loading, setLoading] = useState(false);
+  const [isSignedIn, setIsSignedIn] = useState(false);
+  const [currentUser, setCurrentUser] = useState<User | undefined>(undefined);
 
-  // const onSubmit = handleSubmit((data) => {
-  //   console.log(data['username']);
-  //   setUsername(data['username']);
-  // });
-
-  // useEffect(() => {
-  //   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-  //     const currentURL = tabs[0].url || '';
-  //     const name = getGitHubUsername(currentURL);
-  //     setUsername(name);
-  //     setValue('username', name);
-  //   });
-  // }, []);
-
-  // useEffect(() => {
-  //   const fetch = async (username: string) => {
-  //     const themeType =
-  //       colorMode === 'light' ? ThemeType.LIGHT : ThemeType.DARK;
-  //     const stats = await getGitHubStats(username, themeType);
-  //     const lang = await getGitHubTopLanguage(username, themeType);
-  //     setCurrentTopLanguage(lang.data);
-  //     setCurrentStats(stats.data);
-  //   };
-  //   console.log(username);
-  //   if (username !== '') {
-  //     console.log(username);
-  //     fetch(username);
-  //   }
-  // }, [username, colorMode, currentStats, currentTopLanguage]);
-
-  // return (
-  //   <>
-  //     <Box w="540px">
-  //       <Header />
-  //       <StatsBody
-  //         currentStats={currentStats}
-  //         currentTopLanguage={currentTopLanguage}
-  //       />
-  //       <StatsForm
-  //         onSubmit={onSubmit}
-  //         register={register}
-  //         formState={formState}
-  //       />
-  //     </Box>
-  //   </>
-  // );
+  return (
+    <React.StrictMode>
+      <AuthContext.Provider
+        value={{
+          loading,
+          setLoading,
+          isSignedIn,
+          setIsSignedIn,
+          currentUser,
+          setCurrentUser,
+        }}
+      >
+        <ThemeProvider theme={theme}>
+          <Popup />
+        </ThemeProvider>
+      </AuthContext.Provider>
+    </React.StrictMode>
+  );
 };
 
 const container = document.getElementById('root');
 if (!container) throw new Error('container not found');
 const root = createRoot(container);
-root.render(
-  <React.StrictMode>
-    <ThemeProvider theme={theme}>
-      <Popup />
-    </ThemeProvider>
-  </React.StrictMode>
-);
+root.render(<App />);
