@@ -57,13 +57,13 @@ const AuthContext = createContext(
 const Popup = () => {
   const classes = useStyles();
 
-  const { setIsSignedIn, currentUser, setCurrentUser } =
+  const { isSignedIn, setIsSignedIn, currentUser, setCurrentUser } =
     useContext(AuthContext);
 
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
 
-  const handleSubmit1 = async (e: React.MouseEvent<HTMLButtonElement>) => {
+  const handleSubmit = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
 
     const data: SignInData = {
@@ -83,10 +83,7 @@ const Popup = () => {
         console.log(Cookies.set('_uid', res.headers['uid']));
 
         setIsSignedIn(true);
-        // console.log(res.data.data);
         setCurrentUser(res.data.data);
-        // console.log(currentUser);
-
         console.log('Signed in successfully!');
       }
     } catch (err) {
@@ -98,52 +95,76 @@ const Popup = () => {
 
   return (
     <>
-      <Box sx={{ width: 960 }}>
-        <form noValidate autoComplete="off">
-          <Card className={classes.card}>
-            <CardHeader className={classes.header} title="サインイン" />
-            <CardContent>
-              <TextField
-                variant="outlined"
-                required
-                fullWidth
-                label="メールアドレス"
-                value={email}
-                margin="dense"
-                onChange={(event) => setEmail(event.target.value)}
-              />
-              <TextField
-                variant="outlined"
-                required
-                fullWidth
-                label="パスワード"
-                type="password"
-                placeholder="6文字以上"
-                value={password}
-                margin="dense"
-                autoComplete="current-password"
-                onChange={(event) => setPassword(event.target.value)}
-              />
-              <Box className={classes.submitBtn}>
-                <Button
-                  type="submit"
+      <Box sx={{ width: 540 }}>
+        {isSignedIn && currentUser ? (
+          <>
+            <h2>メールアドレス: {currentUser?.email}</h2>
+            <h2>名前: {currentUser?.name}</h2>
+          </>
+        ) : (
+          <form noValidate autoComplete="off">
+            <Card className={classes.card}>
+              <CardHeader className={classes.header} title="サインイン" />
+              <CardContent>
+                <TextField
                   variant="outlined"
-                  color="primary"
-                  disabled={!email || !password ? true : false}
-                  onClick={handleSubmit1}
-                >
-                  送信
-                </Button>
-              </Box>
-              <Box textAlign="center" className={classes.box}>
-                <Typography variant="body2">
-                  まだアカウントをお持ちでない方はから作成してください。
-                </Typography>
-              </Box>
-            </CardContent>
-          </Card>
-        </form>
+                  required
+                  fullWidth
+                  label="メールアドレス"
+                  value={email}
+                  margin="dense"
+                  onChange={(event) => setEmail(event.target.value)}
+                />
+                <TextField
+                  variant="outlined"
+                  required
+                  fullWidth
+                  label="パスワード"
+                  type="password"
+                  placeholder="6文字以上"
+                  value={password}
+                  margin="dense"
+                  autoComplete="current-password"
+                  onChange={(event) => setPassword(event.target.value)}
+                />
+                <Box className={classes.submitBtn}>
+                  <Button
+                    type="submit"
+                    variant="outlined"
+                    color="primary"
+                    disabled={!email || !password ? true : false}
+                    onClick={handleSubmit}
+                  >
+                    送信
+                  </Button>
+                </Box>
+                <Box textAlign="center" className={classes.box}>
+                  <Typography variant="body2">
+                    まだアカウントをお持ちでない方はから作成してください。
+                  </Typography>
+                </Box>
+              </CardContent>
+            </Card>
+          </form>
+        )}
       </Box>
+    </>
+  );
+};
+
+const Home: React.FC = () => {
+  const { isSignedIn, currentUser } = useContext(AuthContext);
+
+  return (
+    <>
+      {isSignedIn && currentUser ? (
+        <>
+          <h2>メールアドレス: {currentUser?.email}</h2>
+          <h2>名前: {currentUser?.name}</h2>
+        </>
+      ) : (
+        <></>
+      )}
     </>
   );
 };
