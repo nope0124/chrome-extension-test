@@ -3,9 +3,12 @@ import { createRoot } from 'react-dom/client';
 
 import { makeStyles } from '@mui/styles';
 
+import { AuthData } from '@/interfaces/auth';
+import { BookmarkLink } from '@/interfaces/bookmark';
 import { SignInData } from '@/interfaces/index';
 import { User } from '@/interfaces/user';
 import { getCurrentUser, signIn } from '@/lib/api/auth';
+import { getBookmark } from '@/lib/api/bookmark';
 
 import { Typography } from '@mui/material';
 import Box from '@mui/material/Box';
@@ -63,7 +66,7 @@ const Popup = () => {
   const [password, setPassword] = useState<string>('');
 
   // ログイン成功時にトークンを保存
-  const saveAuthData = (authData: any) => {
+  const saveAuthData = (authData: AuthData) => {
     chrome.storage.local.set(authData, function () {
       console.log('Auth data is saved in Chrome storage');
     });
@@ -87,7 +90,12 @@ const Popup = () => {
     client: string,
     uid: string
   ) => {
-    const res = await getCurrentUser(accessToken, client, uid);
+    const authData: AuthData = {
+      accessToken: accessToken,
+      client: client,
+      uid: uid,
+    };
+    const res = await getCurrentUser(authData);
     console.log(res);
     console.log('autoLoginCheck');
     setCurrentUser(res?.data.currentUser);
@@ -112,7 +120,7 @@ const Popup = () => {
 
       if (res.status === 200) {
         saveAuthData({
-          'access-token': res.headers['access-token'],
+          accessToken: res.headers['access-token'],
           client: res.headers['client'],
           uid: res.headers['uid'],
         });
@@ -191,6 +199,7 @@ const Home: React.FC = () => {
   const [currentUrl, setCurrentUrl] = useState('');
   const [currentTitle, setCurrentTitle] = useState('');
   const [faviconUrl, setFaviconUrl] = useState('');
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
     // 現在のタブの情報を取得する関数
@@ -206,20 +215,78 @@ const Home: React.FC = () => {
     };
 
     getCurrentTabInfo();
+    handleGetBookmark();
   }, []);
+
+  const [bookmarkLinks, setBookmarkLinks] = useState<BookmarkLink[]>([]);
+
+  const handleGetBookmark = async () => {
+    try {
+      // Chromeストレージから認証データを取得するプロミスベースの関数
+      const getAuthData = (): Promise<AuthData> => {
+        return new Promise((resolve, reject) => {
+          chrome.storage.local.get(
+            ['access-token', 'client', 'uid'],
+            function (result) {
+              if (result['access-token'] && result['client'] && result['uid']) {
+                const authData: AuthData = {
+                  accessToken: result['access-token'],
+                  client: result['client'],
+                  uid: result['uid'],
+                };
+                resolve(authData);
+              } else {
+                reject('No auth data found');
+              }
+            }
+          );
+        });
+      };
+
+      // 認証データを取得
+      const authData: AuthData = await getAuthData();
+      console.log(authData);
+
+      // ブックマークを取得
+      const res = await getBookmark(authData);
+      console.log(res);
+
+      if (res?.status === 200) {
+        setBookmarkLinks(res?.data.bookmarkLinks);
+      } else {
+        console.log('No bookmark data');
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <>
       {isSignedIn && currentUser ? (
-        <>
-          <h2>メールアドレス: {currentUser?.email}</h2>
-          <h2>名前: {currentUser?.name}</h2>
-          <p>現在のURL: {currentUrl}</p>
-          <p>現在のタイトル: {currentTitle}</p>
-          <p>
-            現在のFavicon: <img src={faviconUrl} alt="Favicon" />
-          </p>
-        </>
+        !loading ? (
+          <>
+            <h2>メールアドレス: {currentUser?.email}</h2>
+            <h2>名前: {currentUser?.name}</h2>
+            <p>現在のURL: {currentUrl}</p>
+            <p>現在のタイトル: {currentTitle}</p>
+            <p>
+              現在のFavicon: <img src={faviconUrl} alt="Favicon" />
+            </p>
+            {bookmarkLinks.map((link, index) => (
+              <div key={index}>
+                <a href={link.url} target="_blank" rel="noopener noreferrer">
+                  <img src={link.faviconUrl} alt={`${link.urlTitle} Favicon`} />
+                  {link.urlTitle}
+                </a>
+              </div>
+            ))}
+          </>
+        ) : (
+          <></>
+        )
       ) : (
         <></>
       )}

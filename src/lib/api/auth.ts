@@ -1,6 +1,7 @@
 import client from '@/lib/api/client';
 import Cookies from 'js-cookie';
 
+import { AuthData } from '@/interfaces/auth';
 import { SignInData, SignUpData } from '@/interfaces/index';
 
 // サインアップ（新規アカウント作成）
@@ -25,16 +26,12 @@ export const signOut = () => {
 };
 
 // 認証済みのユーザーを取得
-export const getCurrentUser = (
-  _access_token: string,
-  _client: string,
-  _uid: string
-) => {
+export const getCurrentUser = (authData: AuthData) => {
   return client.get('/auth/sessions', {
     headers: {
-      'access-token': _access_token,
-      client: _client,
-      uid: _uid,
+      'access-token': authData.accessToken,
+      client: authData.client,
+      uid: authData.uid,
     },
   });
 };
